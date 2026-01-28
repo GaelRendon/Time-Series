@@ -1,0 +1,166 @@
+---
+title: "Actividad 1 series de tiempo"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Clase 1 funcionamiento de r
+
+## pkgs
+
+Se agregan ctrl + alt + I
+
+```{r}
+#| message: false
+library(tidyverse)
+library(fpp3)
+```
+
+## Turismo
+
+-   Para ejecutar un chunk, se puede hacer con ctrl+shft+enter
+-   Para ejecutar solo la linea actual ctrl+enter
+
+```{r}
+tourism
+```
+
+```{r}
+distinct(tourism, State)
+```
+
+```{r}
+distinct(filter(tourism, State == "Tasmania"), Region)
+```
+
+Aqui primero filtramos el estado y la region, luego lo agrupamos con un group_by, luego lo convertimos a tablas y por ultimo hacemos un summarise
+
+```{r}
+summarise(group_by(as_tibble(filter(tourism, State == "Tasmania", 
+                                    Region == "East Coast")), Purpose),
+          mean_trips = mean(Trips))
+```
+
+Native pipe operator, \|\> significa luego
+
+```{r}
+tourism|>
+  filter(State == "Tasmania", 
+         Region == "East Coast")|>
+  as_tibble()|>
+  group_by(Purpose)|>
+  summarise(mean_trips = mean(Trips))
+```
+
+Asi en vez de poner todo en una oracion junta lo hacemos un poco mas logico con los pipe lines.
+
+### Aqui lo que estamos haciendo es:
+
+1.  Take the tsibble tourism, then
+2.  filter by State and Region, then
+3.  convert to a tibble, then
+4.  group the tibble by purpose, then
+5.  summarise by taking the mean trips
+
+# Grafica de tiempo de la tabla
+
+```{r}
+tourism|> 
+  filter(State == "Tasmania", 
+         Region == "East Coast")|>
+  autoplot(Trips) 
+```
+
+Aqui no se ve bien la grafica asi que mejor usamos esta funcion que nos permite crear un mejor grafico
+
+```{r}
+tourism|> 
+  filter(State == "Tasmania", 
+         Region == "East Coast")|>
+  autoplot(Trips) +
+  facet_wrap(vars(Purpose), scale = "free_y")+ 
+  theme(legend.position = "none")
+```
+
+Lo que esto hace es que crea un grafico por cada proposito y los escala de forma independiente. Obviamente dejando las escalas libres en y porque sino las graficas serian similiares a las que vimos arriba.
+
+**facet_wrap(vars(Purpose), scale = "free_y")**
+
+El vars nos indica que separa cada Grafico que en este caso es el proposito y el free y nos los escala para que cada grafico tenga su propia escala porque sino no nos sirve de nada separarlos en este caso.
+
+**theme(legend.position = "none")** El theme nos permite modificar la estetica del grafico en este caso le decimos que no muestre la leyenda. Ya que en este caso es un poco redundante ya que el titulo de cada grafica indica lo mismo que la leyenda.
+
+# Times plot
+
+```{r}
+aus_production|>
+  autoplot(Gas)
+```
+
+Esta es una grafica de tiempo ya que tenemos el tiempo en eje x, tambien se le pueden agregar puntos.
+
+```{r}
+aus_production|>
+  autoplot(Gas) +
+  geom_point()
+```
+
+Esta serie tiene tendencia alcista y tambien tiene estacionalidad. Y podemos observar que la estacionalidad va cambiando conforme a la tendencia.
+
+# Seasonal plots
+
+```{r}
+aus_production|>
+  gg_season(Gas) 
+```
+
+Aqui podemos ver la estacionalidad un poco mas marcada pero tenemos que remover los años y ponerlo en un solo eje de la "y"
+# Seasonal sub series plots
+```{r}
+aus_production|>
+  gg_subseries(Gas)
+```
+Esto nos muestra el primer, segundo, tercer y cuarto cuatrimestre a lo largo del tiempo mientras que la linea azul representa el promedio durante todo el tiempo del cuatrimestre.
+# gg_tsdisplay
+Lo que hace es que nos pone tres graficas en una misma imagen, la de arriba es la grafica del tiempo, la segunda es un ACF y la tercer nos permite cambiarla
+```{r}
+aus_production|>
+  gg_tsdisplay(Gas, plot_type = "season")
+```
+En la tercera nosotros podemos elegir el tipo de grafica que queremos hay diferentes opciones como auto, histo, scatter, season, etc.
+# Exportar datos a un csv
+```{r}
+tourism |> 
+  filter(State == "Tasmania",
+         Region == "East Coast") |> 
+  mutate(Quarter = as.Date(Quarter)) |> 
+  write_csv("./tasmania.csv")
+```
+
+Solo tendriamos que poner lo que queremos del csv luego el nombre del archivo y la extension .csv y se nos guardaria en el directorio de trabajo.
+
+# Time serires descomposition
+```{r}
+library(tidyverse)
+library(plotly)
+```
+
+## Ts Patterns
+- Trend: A long-term increase/decrease in the data.
+
+- Seasonal: Fluctuations in the time series with a fixed and known period1.
+
+- Cycles: More commonly known as “Business cycles”, refer to rises and falls that are not of a fixed frequency2.
+
+- Changes in variability: Changes in the spread of the data over time, i. e., an increase/decrease in the variance as the level of the series increases/decreases.
+
+## Componentes de una serie de tiempo
+- Componente de estacionalidad (S): Variaciones que se repiten en intervalos regulares de tiempo (por ejemplo, ventas que aumentan durante las vacaciones).
+- Componente de tendencia de ciclo (T): Cambios a largo plazo en la serie de tiempo que no son estacionales (por ejemplo, una tendencia al alza o a la baja en las ventas a lo largo de varios años).
+- Componente residual(R): Variaciones aleatorias o ruido en la serie de tiempo que no pueden ser explicadas por los componentes de estacionalidad o tendencia de ciclo.
+
+# Mathematical transofrmations
+
+
